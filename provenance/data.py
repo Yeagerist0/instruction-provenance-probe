@@ -135,7 +135,7 @@ SWAP_FRAME = (
 )
 
 
-def build_swapped_dataset() -> list[Example]:
+def build_swapped_dataset(holdout_instructions: int = 4) -> list[Example]:
     """Each pair uses instruction I and a decoy D, in both orders.
 
     trusted=1 : operator slot holds I, document slot holds D
@@ -147,8 +147,14 @@ def build_swapped_dataset() -> list[Example]:
     """
     examples: list[Example] = []
     n = len(INSTRUCTIONS)
+    if not 1 < holdout_instructions < n - 1:
+        raise ValueError("holdout_instructions must leave at least two instructions in each split")
+    boundary = n - holdout_instructions
     for index, (instruction, target) in enumerate(INSTRUCTIONS):
-        decoy, _ = INSTRUCTIONS[(index + 1) % n]
+        # Keep each decoy in the same partition as its target. Otherwise the
+        # first held-out instruction leaks into training through a decoy.
+        decoy_index = index + 1 if index + 1 not in (boundary, n) else (0 if index < boundary else boundary)
+        decoy, _ = INSTRUCTIONS[decoy_index]
         for carrier_name, carrier_template in UNTRUSTED_CARRIERS:
             examples.append(
                 Example(
@@ -186,6 +192,8 @@ def held_out_split(examples: list[Example], holdout_instructions: int = 4):
     makes the test set ask the question we actually care about: does the
     direction generalize to instructions the probe has never seen?
     """
+    if not 1 < holdout_instructions < len(INSTRUCTIONS) - 1:
+        raise ValueError("holdout_instructions must leave at least two instructions in each split")
     held = {instruction for instruction, _ in INSTRUCTIONS[-holdout_instructions:]}
     train = [e for e in examples if e.instruction not in held]
     test = [e for e in examples if e.instruction in held]

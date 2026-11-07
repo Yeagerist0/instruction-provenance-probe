@@ -9,8 +9,16 @@ same question: is instruction provenance linearly decodable from the residual
 stream, and if so, is that representation causally involved in the model's
 behavior?
 
-**Result on GPT-2 small: no, on both counts.** Details and caveats below. The
-headline finding of this repo is a null result plus a methodological one.
+**Earlier GPT-2 small run: a null result, with the caveat below.** The
+methodological finding about prompt length remains useful.
+
+**Reproduction status:** The original v2 run allowed a held-out instruction
+to appear as a decoy in training (and a training instruction as a decoy in
+test). The dataset builder now keeps each decoy within its target's split,
+and `tests/test_data.py` checks this. The v2 probe and intervention numbers
+below came from the earlier dataset and need a fresh model run before they
+can support a claim about unseen instructions. `results/results.json` is
+also an archival result from that earlier run.
 
 ## The methodological finding
 
@@ -55,8 +63,8 @@ it is the control that licenses interpreting the layer sweep at all.
 
 ## The null result
 
-With the confound removed, no layer carries a linearly decodable, generalizing
-provenance signal:
+The earlier v2 run produced these scores. They are archival until rerun with
+the corrected holdout split:
 
 ```
 layer     probe   shuffled   majority
